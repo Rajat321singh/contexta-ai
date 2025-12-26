@@ -1,15 +1,17 @@
 import dotenv from 'dotenv';
-
-// Load environment variables FIRST before other imports
 dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
+import session from 'express-session';
 import { connectDatabase } from './src/config/database.js';
 import { startSchedulers } from './src/scheduler/mainScheduler.js';
+import passport from './src/config/passport.js';
 
 // Routes
+import authRoutes from './src/routes/authRoutes.js';
+import onboardingRoutes from './src/routes/onboardingRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
 import eventRoutes from './src/routes/eventRoutes.js';
 import feedbackRoutes from './src/routes/feedbackRoutes.js';
@@ -28,6 +30,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Session for Google OAuth
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  resave: false,
+  saveUninitialized: false
+}));
+
+// Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -36,6 +49,8 @@ app.use((req, res, next) => {
 
 // Routes
 console.log('📍 Registering API routes...');
+app.use('/api/auth', authRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/feedback', feedbackRoutes);
@@ -83,21 +98,18 @@ app.use((err, req, res, next) => {
 // Start server
 async function startServer() {
   try {
-    // Connect to database
     await connectDatabase();
     
-    // Start schedulers (only in production or if explicitly enabled)
     if (process.env.ENABLE_SCHEDULERS === 'true') {
       startSchedulers();
     } else {
-      console.log(' Schedulers disabled. Set ENABLE_SCHEDULERS=true to enable');
+      console.log('⏸️  Schedulers disabled');
     }
     
-    // Start Express server
     app.listen(PORT, () => {
-      console.log(`\n Contexta Backend running on port ${PORT}`);
-      console.log(` API URL: http://localhost:${PORT}`);
-      console.log(` Health check: http://localhost:${PORT}/health\n`);
+      console.log(`\n🚀 DevSignal AI Backend running on port ${PORT}`);
+      console.log(`📍 API URL: http://localhost:${PORT}`);
+      console.log(`🏥 Health check: http://localhost:${PORT}/health\n`);
     });
     
   } catch (error) {
@@ -106,7 +118,6 @@ async function startServer() {
   }
 }
 
-// Handle shutdown gracefully
 process.on('SIGTERM', async () => {
   console.log('\nSIGTERM received. Shutting down gracefully...');
   await mongoose.connection.close();
@@ -119,5 +130,4 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Start the server
 startServer();
