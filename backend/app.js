@@ -9,8 +9,10 @@ import passport from './src/config/passport.js';
 
 console.log('\n--- Environment Loading Check ---');
 console.log('  CWD:', process.cwd());
+console.log('  MONGODB_URI:', process.env.MONGODB_URI ? '✅ DEFINED (Starts with: ' + process.env.MONGODB_URI.substring(0, 15) + '...)' : '❌ UNDEFINED');
 console.log('  GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? '✅ DEFINED (' + process.env.GOOGLE_CLIENT_ID.substring(0, 10) + '...)' : '❌ UNDEFINED');
 console.log('  GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? '✅ DEFINED' : '❌ UNDEFINED');
+console.log('  SESSION_SECRET:', process.env.SESSION_SECRET ? '✅ DEFINED' : '⚠️  UNDEFINED (Using default)');
 console.log('--------------------------------\n');
 
 // Routes
